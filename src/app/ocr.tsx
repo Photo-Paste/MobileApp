@@ -50,7 +50,7 @@ export const useOCR = () => {
           const data = await response.json();
   
           if (data.responses && data.responses[0] && data.responses[0].textAnnotations) {
-            const detections = data.responses[0].textAnnotations;
+            const detections: Detection[] = data.responses[0].textAnnotations;
             const detectedText = detections[0]?.description;
             setOcrResult(detectedText);
       
