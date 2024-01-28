@@ -88,7 +88,7 @@ export default function Home() {
     if (completedCrop) {
       processCroppedImage();
     }
-    if (selectedFile && profile) {
+    else if (selectedFile && profile) {
       performOCR(selectedFile, ocrMode, profile.email, sendOcrResultToServer);
     }
   };
