@@ -10,10 +10,10 @@ import { FcGoogle } from "react-icons/fc";
 import ReactCrop, { PixelCrop, type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import firebase from 'firebase/compat/app';
-
+import { logoutUser, loginWithGoogle } from './authentication'; 
+import { sendOcrResultToServer, performOCR } from './ocr';
 
 const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';
-let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -28,8 +28,6 @@ export default function Home() {
   const blobUrlRef = useRef("");
   const imgRef = useRef<HTMLImageElement>(null);
   const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
-
-  const firebaseAuth = getAuth(app);
 
   const handleFileChange = (event: any) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -82,7 +80,7 @@ export default function Home() {
       type: 'image/jpeg',
     });
   
-    performOCR(croppedFile);
+    performOCR(croppedFile, setOcrResult, sendOcrResultToServer, profile.email);
   }
   
   const handleOcr = async () => {
@@ -91,104 +89,11 @@ export default function Home() {
     if (completedCrop) {
       processCroppedImage();
     } else {
-      performOCR(selectedFile);
+      performOCR(selectedFile, setOcrResult, sendOcrResultToServer, profile.email);
     }
   };
   
-  const performOCR = async (file: any) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = async () => {
-      if (typeof reader.result === 'string') {
-        const base64data = reader.result.split(',')[1];
-  
-      const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY;
-  
-      const requestPayload = {
-        requests: [
-          {
-            image: {
-              content: base64data
-            },
-            features: [
-              {
-                type: "TEXT_DETECTION"
-              }
-            ]
-          }
-        ]
-      };
-  
-      try {
-        const response = await fetch(visionApiUrl, {
-          method: 'POST',
-          body: JSON.stringify(requestPayload),
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-  
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-  
-        const data = await response.json();
-        const detectedText = data.responses[0].fullTextAnnotation.text;
-        setOcrResult(detectedText);
-        sendOcrResultToServer(detectedText, profile.email);
-      } catch (error) {
-        console.error('OCR processing failed:', error);
-        setOcrResult("OCR processing failed");
-      }
-    };
-  };
-  };
 
-  async function sendOcrResultToServer(ocrText: any, userEmail: any) {
-    const url = `http://68.183.156.19/records/${userEmail}`;
-    const payload = {
-      text: ocrText,
-    };
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Success:', data);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }
-
-
-  
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(firebaseAuth, provider);
-    } catch (error) {
-      console.error('Login Failed:', error);
-    }
-  };
-
-  const logoutUser = async () => {
-    try {
-      await signOut(firebaseAuth);
-    } catch (error) {
-      console.error('Logout Failed:', error);
-    }
-  };
-  
 
 
 useEffect(() => {
