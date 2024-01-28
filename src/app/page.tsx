@@ -131,9 +131,9 @@ useEffect(() => {
 
 return (
 <div>
-  <div className="flex justify-between items-start p-4">
-    {profile ? (
-      <>
+  {profile ? (
+    <>
+      <div className="flex justify-between items-start p-4">
         <div className="z-10">
           <button onClick={logoutUser} className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition duration-150 ease-in-out">
             Logout
@@ -142,57 +142,57 @@ return (
         <div className="z-10">
           <img src={profile.picture} alt="user image" className="rounded-full h-12 w-12" />
         </div>
-      </>
-    ) : (
-      <div className="ml-auto z-10">
-        <button
-          onClick={loginWithGoogle}
-          className="flex items-center bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out"
-        >
-          <FcGoogle className="mr-2" />
-          Sign in with Google
-        </button>
       </div>
-    )}
-  </div>
 
-  <div className="container mx-auto px-4">
-    {profile && (
-      <div className="flex flex-col items-center mt-5">
-        <span className="text-lg font-medium mb-4">Upload Image</span>
-        <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
-        {selectedFile && <div>Selected file: {selectedFile.name}</div>}
-        {imagePreviewUrl && (
-          <div className="relative mt-2 w-full flex justify-center">
-            <ReactCrop
-              crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
-            >
-              <img
-                src={imagePreviewUrl}
-                ref={imgRef}
-                alt="Preview"
-                className="max-w-full h-auto object-cover"
-              />
-            </ReactCrop>
-            <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
-            {ocrResult && (
-              <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black bg-opacity-50 p-4 text-white">
-                {ocrResult}
-              </div>
-            )}
-          </div>
-        )}
-        {selectedFile && (
-          <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
-            Process OCR
-          </button>
-        )}
-        {ocrResult && <div className="mt-3 p-4 bg-gray-100 rounded">{ocrResult}</div>}
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col items-center mt-5">
+          <span className="text-lg font-medium mb-4">Upload Image</span>
+          <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
+          {selectedFile && <div>Selected file: {selectedFile.name}</div>}
+          {imagePreviewUrl && (
+            <div className="relative mt-2 w-full flex justify-center">
+              <ReactCrop
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+              >
+                <img
+                  src={imagePreviewUrl}
+                  ref={imgRef}
+                  alt="Preview"
+                  className="max-w-full h-auto object-cover"
+                />
+              </ReactCrop>
+              <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+              {ocrResult && (
+                <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black bg-opacity-50 p-4 text-white">
+                  {ocrResult}
+                </div>
+              )}
+            </div>
+          )}
+          {selectedFile && (
+            <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
+              Process OCR
+            </button>
+          )}
+          {ocrResult && <div className="mt-3 p-4 bg-gray-100 rounded">{ocrResult}</div>}
+        </div>
       </div>
-    )}
-  </div>
+    </>
+  ) : (
+    <div className="text-center mt-10">
+      <h1 className="text-4xl font-bold mb-5">PhotoPaste</h1>
+      <img src="/photo-paste-logo.png" alt="PhotoPaste Logo" className="mx-auto mb-5" style={{ maxWidth: '200px' }} />
+      <button
+        onClick={loginWithGoogle}
+        className="flex items-center bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out justify-center mx-auto"
+      >
+        <FcGoogle className="mr-2" />
+        Sign in with Google
+      </button>
+    </div>
+  )}
 </div>
 );
 };
