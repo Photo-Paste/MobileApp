@@ -9,6 +9,7 @@ import { getFirestore, doc, getDoc, setDoc, Firestore, getDocs, query } from 'fi
 import { FcGoogle } from "react-icons/fc";
 import ReactCrop, { PixelCrop, type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
+import firebase from 'firebase/compat/app';
 
 
 const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';;
@@ -159,41 +160,20 @@ const sendFileToOcr = async (file: any) => {
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(firebaseAuth, provider);
-        // Handle the result
-
-        // The user is now authenticated with Firebase, let's create a Firestore document
-        const userDocRef = doc(getFirestore(), 'users', result.user.uid);
-        const userDoc = await getDoc(userDocRef);
-    
-        // Check if the user document exists
-        if (!userDoc.exists()) {
-            await setDoc(userDocRef, {
-                uid: result.user.uid,
-                email: result.user.email,
-                name: result.user.displayName,
-            });
-            console.log('Firestore user document created!');
-        }
-        
-        // Update the user state with the Firebase user information
-        const firebaseUser = result.user;
-        setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL, // Profile picture URL
-        });
-
-        // Set profile directly from Firebase user
-        setProfile({
-            name: firebaseUser.displayName,
-            email: firebaseUser.email,
-            picture: firebaseUser.photoURL,
-        });
-
+      // Use await to wait for the signInWithPopup promise to resolve
+      await signInWithPopup(firebaseAuth, provider);
+      // No further action needed here; onAuthStateChanged will handle user state updates
     } catch (error) {
-        console.error('Login Failed:', error);
+      console.error('Login Failed:', error);
+    }
+  };
+
+  const logoutUser = async () => {
+    try {
+      await signOut(firebaseAuth);
+      // onAuthStateChanged will set user to null
+    } catch (error) {
+      console.error('Logout Failed:', error);
     }
   };
   
@@ -207,6 +187,32 @@ useEffect(() => {
         setUser(userData);
     }
 
+}, []);
+
+useEffect(() => {
+  const unsubscribe = getAuth(app).onAuthStateChanged((user) => {
+    if (user) {
+      // User is signed in
+      setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+      });
+      setProfile({
+        name: user.displayName,
+        email: user.email,
+        picture: user.photoURL,
+      });
+    } else {
+      // User is signed out
+      setUser(null);
+      setProfile(null);
+    }
+  });
+
+  // Cleanup subscription on unmount
+  return () => unsubscribe();
 }, []);
 
 
@@ -260,6 +266,11 @@ return (
           {/* Additional UI when the user is not logged in */}
         </div>
       )}
+      {profile && (
+  <button onClick={logoutUser} className="logout-button">
+    Logout
+  </button>
+)}
   </div>
 
   
