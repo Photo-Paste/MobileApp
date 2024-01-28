@@ -77,7 +77,7 @@ export const useOCR = () => {
 };
 
 export async function sendOcrResultToServer(ocrText: string, userEmail: string) {
-    const url = `https://photo-paste/records/${userEmail}`;
+    const url = `https://photo-paste.com/records/${userEmail}`;
     const payload = {
       text: ocrText,
     };
