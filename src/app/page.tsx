@@ -29,7 +29,7 @@ export default function Home() {
   const imgRef = useRef<HTMLImageElement>(null);
   const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
 
-
+let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
 
   const firebaseAuth = getAuth(app);
 
@@ -97,23 +97,55 @@ export default function Home() {
     }
   };
   
-  const performOCR = (file: any) => {
-    Tesseract.recognize(
-      file,
-      'eng',
-      {
-        logger: m => console.log(m),
+  const performOCR = async (file: any) => {
+    // Convert the File object to a Base64-encoded string
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      if (typeof reader.result === 'string') {
+        const base64data = reader.result.split(',')[1]; // Remove the "data:image/jpeg;base64," part
+  
+      const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY; // Replace with your API key
+  
+      const requestPayload = {
+        requests: [
+          {
+            image: {
+              content: base64data
+            },
+            features: [
+              {
+                type: "TEXT_DETECTION"
+              }
+            ]
+          }
+        ]
+      };
+  
+      try {
+        const response = await fetch(visionApiUrl, {
+          method: 'POST',
+          body: JSON.stringify(requestPayload),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+        const detectedText = data.responses[0].fullTextAnnotation.text;
+        setOcrResult(detectedText);
+        sendOcrResultToServer(detectedText, profile.email);
+      } catch (error) {
+        console.error('OCR processing failed:', error);
+        setOcrResult("OCR processing failed");
       }
-    ).then(({ data: { text } }) => {
-      setOcrResult(text);
-      sendOcrResultToServer(text, profile.email);
-    })
-    .catch(error => {
-      console.error('OCR processing failed:', error);
-      setOcrResult("OCR processing failed");
-    });
+    };
   };
-
+  };
 
   // Function to send the OCR result to the server
   async function sendOcrResultToServer(ocrText: any, userEmail: any) {
@@ -263,7 +295,5 @@ return (
 )}
   </div>
 
-  
 );
-}
-
+};

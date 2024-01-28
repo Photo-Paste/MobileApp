@@ -15,9 +15,10 @@ export default function OCRComponent() {
       setIsProcessing(true);
       Tesseract.recognize(
         selectedFile,
-        'eng', // You can change the language code
+        'eng',
         {
-          logger: (m: any) => console.log(m), // Logs progress (optional)
+          logger: m => console.log(m),
+          ...({ oem: 1, psm: 3 } as any), // Bypass type checking
         }
       ).then(({ data: { text } }) => {
         setOcrText(text);
