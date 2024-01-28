@@ -37,6 +37,8 @@ export const useOCR = () => {
             }
           ]
         };
+
+        console.log(requestPayload)
   
         try {
           const response = await fetch(visionApiUrl, {
