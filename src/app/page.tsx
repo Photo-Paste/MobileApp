@@ -157,6 +157,7 @@ const renderTextOverlays = () => {
     );
   });
 };
+};
 
 
 return (
@@ -231,4 +232,3 @@ return (
     </div>
   );
       };
-    };
