@@ -226,12 +226,15 @@ return (
           {renderTextOverlays()}
         </div>
       )}
-
+      {ocrResult && (
+        <div className= "m-4 max-w-l">{ocrResult} </div>
+      )} 
       {selectedFile && (
         <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
           Process Image
         </button>
       )}
+
     </div>
   </div>
 </>
