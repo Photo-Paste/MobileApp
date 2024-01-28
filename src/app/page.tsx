@@ -14,13 +14,20 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // State to hold the selected file
-  const [ocrResult, setOcrResult] = useState<string | null>(null);
+  const [ocrResult, setOcrResult] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
   const firebaseAuth = getAuth(app);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null;
-    setSelectedFile(file);
+  const handleSubmit = () => {
+    sendOcrResultToServer(ocrResult, userEmail);
+  };
+
+  // Function to handle file selection
+  const handleFileChange = (event) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setSelectedFile(event.target.files[0]);
+    }
   };
 
   const handleOcr = async () => {
@@ -41,6 +48,8 @@ export default function Home() {
         if (data.ParsedResults && data.ParsedResults.length > 0) {
             const parsedText = data.ParsedResults[0].ParsedText;
             setOcrResult(parsedText);
+
+            await sendOcrResultToServer(parsedText, profile.email);
         } else {
             setOcrResult("No text recognized");
         }
@@ -50,6 +59,35 @@ export default function Home() {
     }
     };
 
+  // Function to send the OCR result to the server
+  async function sendOcrResultToServer(ocrText, userEmail) {
+    const url = `http://68.183.156.19/records/${userEmail}`; // Replace with your actual API endpoint
+    const payload = {
+      text: ocrText,
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any other headers like authentication tokens if needed
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Success:', data);
+      // Handle the response data
+    } catch (error) {
+      console.error('Error:', error);
+      // Handle errors
+    }
+  }
 
 
   
@@ -133,16 +171,21 @@ return (
           <hr className="border-t border-gray-300" />
       </div>
       {profile ? (
-                <div className="flex flex-col items-center mt-5">
-                <span>Upload Image</span>
-                <input type="file" accept="image/*" onChange={handleFileChange} />
-                {selectedFile && <div>Selected file: {selectedFile.name}</div>}
-                {selectedFile && <button onClick={handleOcr}>Process OCR</button>}
-                {ocrResult && <div className="mt-3">{ocrResult}</div>}
-            </div>
+        <div className="flex flex-col items-center mt-5">
+          <span>Upload Image</span>
+          <input type="file" accept="image/*" onChange={handleFileChange} />
+          {selectedFile && <div>Selected file: {selectedFile.name}</div>}
+          {selectedFile && (
+            <button className="mt-2" onClick={handleOcr}>
+              Process OCR
+            </button>
+          )}
+          {ocrResult && <div className="mt-3">{ocrResult}</div>}
+        </div>
       ) : (
-          <div className="flex justify-center mt-5">
-          </div>
+        <div className="flex justify-center mt-5">
+          {/* Additional UI when the user is not logged in */}
+        </div>
       )}
   </div>
 
