@@ -57,3 +57,5 @@ public/
 *.sublime-workspace
 *.sublime-project
 .history/
+
+.next/
