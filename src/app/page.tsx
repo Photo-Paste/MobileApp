@@ -10,15 +10,15 @@ import { FcGoogle } from "react-icons/fc";
 import ReactCrop, { PixelCrop, type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import firebase from 'firebase/compat/app';
-import Tesseract from 'tesseract.js';
 
 
-const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';;
+const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';
+let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null); // State to hold the selected file
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [ocrResult, setOcrResult] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
@@ -28,8 +28,6 @@ export default function Home() {
   const blobUrlRef = useRef("");
   const imgRef = useRef<HTMLImageElement>(null);
   const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
-
-let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
 
   const firebaseAuth = getAuth(app);
 
@@ -93,19 +91,18 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
     if (completedCrop) {
       processCroppedImage();
     } else {
-      performOCR(selectedFile); // This will send the original file
+      performOCR(selectedFile);
     }
   };
   
   const performOCR = async (file: any) => {
-    // Convert the File object to a Base64-encoded string
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
       if (typeof reader.result === 'string') {
-        const base64data = reader.result.split(',')[1]; // Remove the "data:image/jpeg;base64," part
+        const base64data = reader.result.split(',')[1];
   
-      const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY; // Replace with your API key
+      const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY;
   
       const requestPayload = {
         requests: [
@@ -147,9 +144,8 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
   };
   };
 
-  // Function to send the OCR result to the server
   async function sendOcrResultToServer(ocrText: any, userEmail: any) {
-    const url = `http://68.183.156.19/records/${userEmail}`; // Replace with your actual API endpoint
+    const url = `http://68.183.156.19/records/${userEmail}`;
     const payload = {
       text: ocrText,
     };
@@ -159,7 +155,6 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add any other headers like authentication tokens if needed
         },
         body: JSON.stringify(payload),
       });
@@ -170,10 +165,8 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
 
       const data = await response.json();
       console.log('Success:', data);
-      // Handle the response data
     } catch (error) {
       console.error('Error:', error);
-      // Handle errors
     }
   }
 
@@ -182,9 +175,7 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      // Use await to wait for the signInWithPopup promise to resolve
       await signInWithPopup(firebaseAuth, provider);
-      // No further action needed here; onAuthStateChanged will handle user state updates
     } catch (error) {
       console.error('Login Failed:', error);
     }
@@ -193,7 +184,6 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
   const logoutUser = async () => {
     try {
       await signOut(firebaseAuth);
-      // onAuthStateChanged will set user to null
     } catch (error) {
       console.error('Logout Failed:', error);
     }
@@ -201,7 +191,6 @@ let YOUR_API_KEY="AIzaSyAEDXTkQehTxGbqQ_JOip50sh_asrtFC_4"
   
 
 
-//useEffect to handle if user is already logged in
 useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -214,7 +203,6 @@ useEffect(() => {
 useEffect(() => {
   const unsubscribe = getAuth(app).onAuthStateChanged((user) => {
     if (user) {
-      // User is signed in
       setUser({
         uid: user.uid,
         email: user.email,
@@ -227,73 +215,80 @@ useEffect(() => {
         picture: user.photoURL,
       });
     } else {
-      // User is signed out
       setUser(null);
       setProfile(null);
     }
   });
 
-  // Cleanup subscription on unmount
   return () => unsubscribe();
 }, []);
 
 
 return (
-  <div>
-      <div className="relative">
-          {profile ? (
-              <div>
-                  <img src={profile.picture} alt="user image" className="absolute top-0 right-0 rounded-full h-12 mt-5 mr-5" />
-              </div>
-          ) : (
-              <div className='absolute top-0 right-0 mt-10 mr-10' onClick={loginWithGoogle}>
-                  <button>
-                      <FcGoogle className="mr-3 w-6 h-6" />
-                      Sign in with Google
-                  </button>
-              </div>
-          )}
-          <hr className="border-t border-gray-300" />
-      </div>
+  <div className="container mx-auto p-4">
+    <div className="relative">
       {profile ? (
-        <div className="flex flex-col items-center mt-5">
-          <span>Upload Image</span>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-          {selectedFile && <div>Selected file: {selectedFile.name}</div>}
-          {imagePreviewUrl && (
-            <ReactCrop
-              crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
-            >
-            <img
-              src={imagePreviewUrl}
-              ref={imgRef}
-              alt="Preview"
-              className="mt-2 w-32 h-32 object-cover" // Adjust the width and height as needed
-              
-            />
-              <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
-          </ReactCrop>
-        )}
-          {selectedFile && (
-            <button className="mt-2" onClick={handleOcr}>
-              Process OCR
-            </button>
-          )}
-          {ocrResult && <div className="mt-3">{ocrResult}</div>}
+        <div className="absolute top-0 right-0 mt-5 mr-5">
+          <img src={profile.picture} alt="user image" className="rounded-full h-12 w-12" />
         </div>
       ) : (
-        <div className="flex justify-center mt-5">
-          {/* Additional UI when the user is not logged in */}
+        <div className='absolute top-0 right-0 mt-10 mr-10'>
+          <button
+            onClick={loginWithGoogle}
+            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out"
+          >
+            <FcGoogle className="mr-2" />
+            Sign in with Google
+          </button>
         </div>
       )}
-      {profile && (
-  <button onClick={logoutUser} className="logout-button">
-    Logout
-  </button>
-)}
+      <hr className="border-t border-gray-300 my-4" />
+    </div>
+    {profile ? (
+      <div className="flex flex-col items-center mt-5">
+        <span className="text-lg font-medium mb-4">Upload Image</span>
+        <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
+        {selectedFile && <div>Selected file: {selectedFile.name}</div>}
+        {imagePreviewUrl && (
+  <div className="relative mt-2">
+    <ReactCrop
+      crop={crop}
+      onChange={(_, percentCrop) => setCrop(percentCrop)}
+      onComplete={(c) => setCompletedCrop(c)}
+    >
+      <img
+        src={imagePreviewUrl}
+        ref={imgRef}
+        alt="Preview"
+        className="w-64 h-64 md:w-96 md:h-96 object-cover"
+      />
+    </ReactCrop>
+    <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+    
+    {ocrResult && (
+      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black bg-opacity-50 p-4 text-white">
+        {ocrResult}
+      </div>
+    )}
   </div>
-
+)}
+        {selectedFile && (
+          <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
+            Process OCR
+          </button>
+        )}
+        {ocrResult && <div className="mt-3 p-4 bg-gray-100 rounded">{ocrResult}</div>}
+      </div>
+    ) : (
+      <div className="flex justify-center mt-5">
+        {/* Additional UI when the user is not logged in */}
+      </div>
+    )}
+    {profile && (
+      <button onClick={logoutUser} className="logout-button bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition duration-150 ease-in-out mt-4">
+        Logout
+      </button>
+    )}
+  </div>
 );
 };
