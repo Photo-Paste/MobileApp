@@ -29,6 +29,7 @@ export default function Home() {
   const imgRef = useRef<HTMLImageElement>(null);
   const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
   const { ocrResult, ocrData, performOCR } = useOCR();
+  const [ocrMode, setOcrMode] = useState('TEXT_DOCUMENT');
 
   const handleFileChange = (event: any) => {
     if (event.target.files[0]) {
@@ -79,13 +80,17 @@ export default function Home() {
       type: 'image/jpeg',
     });
   
-    performOCR(croppedFile, profile.email, sendOcrResultToServer);
+    performOCR(croppedFile, ocrMode, profile.email, sendOcrResultToServer);
   }
   
   const handleOcr = () => {
     if (selectedFile && profile) {
       performOCR(selectedFile, profile.email, sendOcrResultToServer);
     }
+  };
+
+  const toggleOcrMode = () => {
+    setOcrMode(ocrMode === 'TEXT_DOCUMENT' ? 'HANDWRITTEN' : 'TEXT_DOCUMENT');
   };
   
 
@@ -130,7 +135,6 @@ const renderTextOverlays = () => {
   const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
   const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
 
-  // Calculate offsets if the image does not fill the entire container
   if (imgElement && imgElement.parentNode instanceof HTMLElement) {
     const parentElement = imgElement.parentNode as HTMLElement;
     const offsetX = (imgElement.clientWidth < parentElement.clientWidth)
@@ -178,6 +182,12 @@ return (
   <div className="container mx-auto px-4">
     <div className="flex flex-col items-center mt-5">
       <span className="text-lg font-medium mb-4">Upload Image</span>
+      <button
+            onClick={toggleOcrMode}
+            className="mb-4 bg-purple-500 text-white px-4 py-2 rounded shadow hover:bg-purple-600 transition duration-150 ease-in-out"
+          >
+            {ocrMode === 'TEXT_DOCUMENT' ? 'Switch to Handwritten Mode' : 'Switch to Text Document Mode'}
+          </button>
       
       <label htmlFor="file-upload" className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out mb-4">
         <span>Select File</span>

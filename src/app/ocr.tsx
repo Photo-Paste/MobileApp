@@ -18,8 +18,7 @@ export const useOCR = () => {
   const [ocrResult, setOcrResult] = useState('');
   const [ocrData, setOcrData] = useState<OCRResult[]>([]);
 
-
-  const performOCR = async (file: any, email: any, sendOcrResultToServer: any) => {
+  const performOCR = async (file: any, ocrMode: string, email: any, sendOcrResultToServer: any) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
@@ -27,11 +26,14 @@ export const useOCR = () => {
         const base64data = reader.result.split(',')[1];
         const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY;
   
+        // Determine the feature type based on the OCR mode
+        const featureType = ocrMode === 'HANDWRITTEN' ? 'DOCUMENT_TEXT_DETECTION' : 'TEXT_DETECTION';
+
         const requestPayload = {
           requests: [
             {
               image: { content: base64data },
-              features: [{ type: "TEXT_DETECTION" }]
+              features: [{ type: featureType }]
             }
           ]
         };
@@ -60,10 +62,8 @@ export const useOCR = () => {
             }));
             setOcrData(ocrResultsWithBoxes);
   
-            // Call sendOcrResultToServer at the end with the detected text
             sendOcrResultToServer(detectedText, email);
           } else {
-            console.error('No text annotations found in the response');
             setOcrResult('No text detected');
           }
         } catch (error) {
