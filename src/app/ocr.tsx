@@ -18,7 +18,8 @@ export const useOCR = () => {
   const [ocrResult, setOcrResult] = useState('');
   const [ocrData, setOcrData] = useState<OCRResult[]>([]);
 
-  const performOCR = async (file: any, ocrMode: string, email: any, sendOcrResultToServer: any) => {
+  const performOCR = async (file: any, ocrMode: string, email: any) => {
+    console.log(file);
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
@@ -63,7 +64,6 @@ export const useOCR = () => {
             }));
             setOcrData(ocrResultsWithBoxes);
   
-            sendOcrResultToServer(detectedText, email);
           } else {
             setOcrResult('No text detected');
           }
@@ -74,7 +74,7 @@ export const useOCR = () => {
       }
     };
   };
-  return { ocrResult, ocrData, performOCR };
+  return { ocrResult, ocrData, performOCR, setOcrResult, setOcrData };
 };
 
 export async function sendOcrResultToServer(ocrText: string, userEmail: string) {

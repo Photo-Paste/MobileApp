@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { TokenResponse, googleLogout, useGoogleLogin } from '@react-oauth/google';
-import React, { useState, useEffect , useRef, useCallback } from 'react';
+import React, { useState, useEffect , useRef, useCallback, use } from 'react';
 import { app } from './firebase';
 import { getAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, Firestore, getDocs, query } from 'firebase/firestore';
@@ -12,7 +12,7 @@ import 'react-image-crop/dist/ReactCrop.css'
 import firebase from 'firebase/compat/app';
 import { logoutUser, loginWithGoogle } from './authentication'; 
 import { sendOcrResultToServer } from './ocr';
-import { useOCR } from './ocr';
+import { useOCR} from './ocr';
 
 const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';
 
@@ -28,75 +28,104 @@ export default function Home() {
   const blobUrlRef = useRef("");
   const imgRef = useRef<HTMLImageElement>(null);
   const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
-  const { ocrResult, ocrData, performOCR } = useOCR();
+  const { ocrResult, ocrData, performOCR, setOcrData } = useOCR();
   const [ocrMode, setOcrMode] = useState('TEXT_DOCUMENT');
+  const [textOverLays, setTextOverlays] = useState<JSX.Element[]>([]);
+  const [overlayKey, setOverlayKey] = useState(0);
 
   const handleFileChange = (event: any) => {
     if (event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
       setImagePreviewUrl(URL.createObjectURL(event.target.files[0]));
     }
+
+    console.log(event.target.files[0]);
+    console.log(selectedFile, "selectedFile");
+
+    performOCR(event.target.files[0], ocrMode, profile.email);
+
+    setOverlayKey(prevKey => prevKey + 1);
+    setOcrData([]);
   };
 
 
   async function processCroppedImage() {
-    const image = imgRef.current;
-    const previewCanvas = previewCanvasRef.current;
-    
-    if (!image || !previewCanvas || !completedCrop) {
-      console.error("Crop canvas does not exist");
-      return;
+    try {
+      const image = imgRef.current;
+      const previewCanvas = previewCanvasRef.current;
+  
+      if (!image || !previewCanvas || !completedCrop) {
+        console.error("Required elements for processing the image are not available.");
+        return;
+      }
+  
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
+  
+      const offscreen = new OffscreenCanvas(
+        completedCrop.width * scaleX,
+        completedCrop.height * scaleY
+      );
+      const ctx = offscreen.getContext("2d");
+      if (!ctx) {
+        console.log("Unable to obtain 2D context from OffscreenCanvas.");
+        return;
+      }
+  
+      ctx.drawImage(
+        image,
+        completedCrop.x * scaleX,
+        completedCrop.y * scaleY,
+        completedCrop.width * scaleX,
+        completedCrop.height * scaleY,
+        0,
+        0,
+        offscreen.width,
+        offscreen.height
+      );
+  
+      const blob = await offscreen.convertToBlob({
+        type: "image/jpeg",
+      });
+  
+      const croppedFile = new File([blob], 'cropped-image.jpg', {
+        type: 'image/jpeg',
+      });
+  
+      performOCR(croppedFile, ocrMode, profile.email);
+    } catch (error) {
+      console.log("An error occurred while processing the cropped image:", error);
+      // Optionally, handle the error by showing a user-friendly message or taking other actions
     }
-  
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-  
-    const offscreen = new OffscreenCanvas(
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
-    );
-    const ctx = offscreen.getContext("2d");
-    if (!ctx) {
-      console.error("No 2d context");
-      return;
-    }
-  
-    ctx.drawImage(
-      image,
-      completedCrop.x * scaleX,
-      completedCrop.y * scaleY,
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
-      0,
-      0,
-      offscreen.width,
-      offscreen.height,
-    );
-  
-    const blob = await offscreen.convertToBlob({
-      type: "image/jpeg",
-    });
-  
-    const croppedFile = new File([blob], 'cropped-image.jpg', {
-      type: 'image/jpeg',
-    });
-  
-    performOCR(croppedFile, ocrMode, profile.email, sendOcrResultToServer);
   }
   
   const handleOcr = () => {
     if (completedCrop) {
       processCroppedImage();
+      sendOcrResultToServer(ocrResult, profile.email);
     }
-    if (selectedFile && profile) {
-      performOCR(selectedFile, ocrMode, profile.email, sendOcrResultToServer);
+    else if (selectedFile && profile) {
+      sendOcrResultToServer(ocrResult, profile.email);
     }
   };
 
   const toggleOcrMode = () => {
     setOcrMode(ocrMode === 'TEXT_DOCUMENT' ? 'HANDWRITTEN' : 'TEXT_DOCUMENT');
   };
+
+  useEffect(() => {
+    if (completedCrop && completedCrop.width > 0 && completedCrop.height > 0) {
+      processCroppedImage();
+    }
+  }, [completedCrop]);
   
+const handleCompleteCrop = (c: any) => {
+  setCompletedCrop(c);  
+  processCroppedImage();
+  setOverlayKey(prevKey => prevKey + 1);
+  setOcrData([]);
+}
+
 
 
 
@@ -133,14 +162,14 @@ useEffect(() => {
 }, []);
 
 const renderTextOverlays = () => {
-  if (!imgRef.current) return null;
+  if (!imgRef.current || !ocrData || ocrData.length === 0) return null; // Ensure ocrData is not null or empty
 
   const imgElement = imgRef.current;
   const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
   const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
 
-  if (imgElement && imgElement.parentNode instanceof HTMLElement) {
-    const parentElement = imgElement.parentNode as HTMLElement;
+  const parentElement = imgElement.parentNode;
+  if (parentElement instanceof HTMLElement) {
     const offsetX = (imgElement.clientWidth < parentElement.clientWidth)
       ? (parentElement.clientWidth - imgElement.clientWidth) / 2
       : 0;
@@ -148,23 +177,24 @@ const renderTextOverlays = () => {
       ? (parentElement.clientHeight - imgElement.clientHeight) / 2
       : 0;
 
-  return ocrData.map((data, index) => {
-    const style: React.CSSProperties = {
-      position: 'absolute',
-      left: `${data.vertices[0].x * scaleX + offsetX}px`,
-      top: `${data.vertices[0].y * scaleY + offsetY}px`,
-      color: 'red',
-      fontSize: '15px',
-      textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black'
-    };
+    return ocrData.map((data, index) => {
+      const style: React.CSSProperties = {
+        position: 'absolute',
+        left: `${data.vertices[0].x * scaleX + offsetX}px`,
+        top: `${data.vertices[0].y * scaleY + offsetY}px`,
+        color: 'red',
+        fontSize: '15px',
+        textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+      };
 
-    return (
-      <div key={index} style={style}>
-        {data.text}
-      </div>
-    );
-  });
-};
+      return (
+        <div key={index} style={style}>
+          {data.text}
+        </div>
+      );
+    });
+  }
+  return null;
 };
 
 
@@ -209,7 +239,7 @@ return (
           <ReactCrop
             crop={crop}
             onChange={(_, percentCrop) => setCrop(percentCrop)}
-            onComplete={(c) => setCompletedCrop(c)}
+            onComplete={handleCompleteCrop}
           >
             <img
               src={imagePreviewUrl}
@@ -219,8 +249,9 @@ return (
             />
           </ReactCrop>
           <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
-
+          <div key={overlayKey}>
           {renderTextOverlays()}
+          </div>
         </div>
       )}
 
