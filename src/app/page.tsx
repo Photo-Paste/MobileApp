@@ -131,15 +131,17 @@ const renderTextOverlays = () => {
   const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
 
   // Calculate offsets if the image does not fill the entire container
-  const offsetX = (imgElement.clientWidth < imgElement.parentNode.clientWidth)
-    ? (imgElement.parentNode.clientWidth - imgElement.clientWidth) / 2
-    : 0;
-  const offsetY = (imgElement.clientHeight < imgElement.parentNode.clientHeight)
-    ? (imgElement.parentNode.clientHeight - imgElement.clientHeight) / 2
-    : 0;
+  if (imgElement && imgElement.parentNode instanceof HTMLElement) {
+    const parentElement = imgElement.parentNode as HTMLElement;
+    const offsetX = (imgElement.clientWidth < parentElement.clientWidth)
+      ? (parentElement.clientWidth - imgElement.clientWidth) / 2
+      : 0;
+    const offsetY = (imgElement.clientHeight < parentElement.clientHeight)
+      ? (parentElement.clientHeight - imgElement.clientHeight) / 2
+      : 0;
 
   return ocrData.map((data, index) => {
-    const style = {
+    const style: React.CSSProperties = {
       position: 'absolute',
       left: `${data.vertices[0].x * scaleX + offsetX}px`,
       top: `${data.vertices[0].y * scaleY + offsetY}px`,
@@ -228,4 +230,5 @@ return (
       )}
     </div>
   );
-};
+      };
+    };
