@@ -225,70 +225,62 @@ useEffect(() => {
 
 
 return (
-  <div className="container mx-auto p-4">
-    <div className="relative">
-      {profile ? (
-        <div className="absolute top-0 right-0 mt-5 mr-5">
-          <img src={profile.picture} alt="user image" className="rounded-full h-12 w-12" />
-        </div>
-      ) : (
-        <div className='absolute top-0 right-0 mt-10 mr-10'>
-          <button
-            onClick={loginWithGoogle}
-            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out"
-          >
-            <FcGoogle className="mr-2" />
-            Sign in with Google
-          </button>
-        </div>
-      )}
-      <hr className="border-t border-gray-300 my-4" />
-    </div>
+<div className="container mx-auto p-4">
+  <div className="relative">
     {profile ? (
-      <div className="flex flex-col items-center mt-5">
-        <span className="text-lg font-medium mb-4">Upload Image</span>
-        <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
-        {selectedFile && <div>Selected file: {selectedFile.name}</div>}
-        {imagePreviewUrl && (
-  <div className="relative mt-2">
-    <ReactCrop
-      crop={crop}
-      onChange={(_, percentCrop) => setCrop(percentCrop)}
-      onComplete={(c) => setCompletedCrop(c)}
-    >
-      <img
-        src={imagePreviewUrl}
-        ref={imgRef}
-        alt="Preview"
-        className="w-64 h-64 md:w-96 md:h-96 object-cover"
-      />
-    </ReactCrop>
-    <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
-    
-    {ocrResult && (
-      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black bg-opacity-50 p-4 text-white">
-        {ocrResult}
-      </div>
-    )}
-  </div>
-)}
-        {selectedFile && (
-          <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
-            Process OCR
-          </button>
-        )}
-        {ocrResult && <div className="mt-3 p-4 bg-gray-100 rounded">{ocrResult}</div>}
+      <div className="fixed top-0 left-0 mt-5 ml-5 z-10">
+        <button onClick={logoutUser} className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition duration-150 ease-in-out">
+          Logout
+        </button>
       </div>
     ) : (
-      <div className="flex justify-center mt-5">
-        {/* Additional UI when the user is not logged in */}
+      <div className='absolute top-0 right-0 mt-10 mr-10'>
+        <button
+          onClick={loginWithGoogle}
+          className="flex items-center bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out"
+        >
+          <FcGoogle className="mr-2" />
+          Sign in with Google
+        </button>
       </div>
     )}
-    {profile && (
-      <button onClick={logoutUser} className="logout-button bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition duration-150 ease-in-out mt-4">
-        Logout
-      </button>
-    )}
+    <hr className="border-t border-gray-300 my-4" />
   </div>
+  {profile && (
+    <div className="flex flex-col items-center mt-5">
+      <span className="text-lg font-medium mb-4">Upload Image</span>
+      <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
+      {selectedFile && <div>Selected file: {selectedFile.name}</div>}
+      {imagePreviewUrl && (
+        <div className="relative mt-2 w-full flex justify-center">
+          <ReactCrop
+            crop={crop}
+            onChange={(_, percentCrop) => setCrop(percentCrop)}
+            onComplete={(c) => setCompletedCrop(c)}
+          >
+            <img
+              src={imagePreviewUrl}
+              ref={imgRef}
+              alt="Preview"
+              className="max-w-full h-auto object-cover" // Adjust for responsive max-width and auto height
+            />
+          </ReactCrop>
+          <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+          {ocrResult && (
+            <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black bg-opacity-50 p-4 text-white">
+              {ocrResult}
+            </div>
+          )}
+        </div>
+      )}
+      {selectedFile && (
+        <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
+          Process OCR
+        </button>
+      )}
+      {ocrResult && <div className="mt-3 p-4 bg-gray-100 rounded">{ocrResult}</div>}
+    </div>
+  )}
+</div>
 );
 };
