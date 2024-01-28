@@ -30,22 +30,14 @@ export default function Home() {
   const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
   const { ocrResult, ocrData, performOCR, setOcrData } = useOCR();
   const [ocrMode, setOcrMode] = useState('TEXT_DOCUMENT');
-  const [textOverLays, setTextOverlays] = useState<JSX.Element[]>([]);
   const [overlayKey, setOverlayKey] = useState(0);
 
   const handleFileChange = (event: any) => {
     if (event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
       setImagePreviewUrl(URL.createObjectURL(event.target.files[0]));
+      performOCR(event.target.files[0], 'TEXT_DOCUMENT', profile?.email);
     }
-
-    console.log(event.target.files[0]);
-    console.log(selectedFile, "selectedFile");
-
-    performOCR(event.target.files[0], ocrMode, profile.email);
-
-    setOverlayKey(prevKey => prevKey + 1);
-    setOcrData([]);
   };
 
 
@@ -55,7 +47,6 @@ export default function Home() {
       const previewCanvas = previewCanvasRef.current;
   
       if (!image || !previewCanvas || !completedCrop) {
-        console.error("Required elements for processing the image are not available.");
         return;
       }
   
@@ -122,8 +113,6 @@ export default function Home() {
 const handleCompleteCrop = (c: any) => {
   setCompletedCrop(c);  
   processCroppedImage();
-  setOverlayKey(prevKey => prevKey + 1);
-  setOcrData([]);
 }
 
 
@@ -162,39 +151,24 @@ useEffect(() => {
 }, []);
 
 const renderTextOverlays = () => {
-  if (!imgRef.current || !ocrData || ocrData.length === 0) return null; // Ensure ocrData is not null or empty
+  if (!imgRef.current || !ocrData || ocrData.length === 0) return null;
 
   const imgElement = imgRef.current;
   const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
   const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
 
-  const parentElement = imgElement.parentNode;
-  if (parentElement instanceof HTMLElement) {
-    const offsetX = (imgElement.clientWidth < parentElement.clientWidth)
-      ? (parentElement.clientWidth - imgElement.clientWidth) / 2
-      : 0;
-    const offsetY = (imgElement.clientHeight < parentElement.clientHeight)
-      ? (parentElement.clientHeight - imgElement.clientHeight) / 2
-      : 0;
+  return ocrData.map((data, index) => {
+    const style: React.CSSProperties = {
+      position: 'absolute',
+      left: `${data.vertices[0].x * scaleX}px`,
+      top: `${data.vertices[0].y * scaleY}px`,
+      color: 'red',
+      fontSize: '15px',
+      textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+    };
 
-    return ocrData.map((data, index) => {
-      const style: React.CSSProperties = {
-        position: 'absolute',
-        left: `${data.vertices[0].x * scaleX + offsetX}px`,
-        top: `${data.vertices[0].y * scaleY + offsetY}px`,
-        color: 'red',
-        fontSize: '15px',
-        textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
-      };
-
-      return (
-        <div key={index} style={style}>
-          {data.text}
-        </div>
-      );
-    });
-  }
-  return null;
+    return <div key={index} style={style}>{data.text}</div>;
+  });
 };
 
 
@@ -249,9 +223,7 @@ return (
             />
           </ReactCrop>
           <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
-          <div key={overlayKey}>
           {renderTextOverlays()}
-          </div>
         </div>
       )}
 
