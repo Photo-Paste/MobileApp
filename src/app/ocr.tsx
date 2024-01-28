@@ -19,7 +19,7 @@ export const useOCR = () => {
   const [ocrData, setOcrData] = useState<OCRResult[]>([]);
 
 
-  const performOCR = async (file, email, sendOcrResultToServer) => {
+  const performOCR = async (file: any, email: any, sendOcrResultToServer: any) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
