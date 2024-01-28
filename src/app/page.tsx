@@ -2,11 +2,14 @@
 
 import Image from 'next/image'
 import { TokenResponse, googleLogout, useGoogleLogin } from '@react-oauth/google';
-import React, { useState, useEffect , useRef } from 'react';
+import React, { useState, useEffect , useRef, useCallback } from 'react';
 import { app } from './firebase';
 import { getAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, Firestore, getDocs, query } from 'firebase/firestore';
 import { FcGoogle } from "react-icons/fc";
+import ReactCrop, { PixelCrop, type Crop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
+
 
 const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';;
 
@@ -16,6 +19,15 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // State to hold the selected file
   const [ocrResult, setOcrResult] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const blobUrlRef = useRef("");
+  const imgRef = useRef<HTMLImageElement>(null);
+  const hiddenAnchorRef = useRef<HTMLAnchorElement>(null);
+
+
 
   const firebaseAuth = getAuth(app);
 
@@ -23,41 +35,103 @@ export default function Home() {
     sendOcrResultToServer(ocrResult, userEmail);
   };
 
-  // Function to handle file selection
+  const onImageLoaded = useCallback((image) => {
+    imgRef.current = image;
+  }, []);
+
   const handleFileChange = (event) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
+
+      // Create a URL for the file
+      const fileUrl = URL.createObjectURL(event.target.files[0]);
+      setImagePreviewUrl(fileUrl);
     }
   };
 
-  const handleOcr = async () => {
-    if (!selectedFile) return;
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('apikey', 'K82946382288957'); // Replace with your OCR.space API key
-    formData.append('language', 'eng'); // You can change this according to your requirements
-
-    try {
-        const response = await fetch('https://api.ocr.space/parse/image', {
-            method: 'POST',
-            body: formData,
-        });
-        const data = await response.json();
-
-        if (data.ParsedResults && data.ParsedResults.length > 0) {
-            const parsedText = data.ParsedResults[0].ParsedText;
-            setOcrResult(parsedText);
-
-            await sendOcrResultToServer(parsedText, profile.email);
-        } else {
-            setOcrResult("No text recognized");
-        }
-    } catch (error) {
-        console.error('OCR processing failed:', error);
-        setOcrResult("OCR processing failed");
+  async function processCroppedImage() {
+    const image = imgRef.current;
+    const previewCanvas = previewCanvasRef.current;
+    if (!image || !previewCanvas || !completedCrop) {
+      console.error("Crop canvas does not exist");
+      return;
     }
-    };
+  
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+  
+    const offscreen = new OffscreenCanvas(
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+    );
+    const ctx = offscreen.getContext("2d");
+    if (!ctx) {
+      console.error("No 2d context");
+      return;
+    }
+  
+    ctx.drawImage(
+      image,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      offscreen.width,
+      offscreen.height,
+    );
+  
+    const blob = await offscreen.convertToBlob({
+      type: "image/jpeg",
+    });
+  
+    const croppedFile = new File([blob], 'cropped-image.jpg', {
+      type: 'image/jpeg',
+    });
+  
+    sendFileToOcr(croppedFile);
+  }
+  
+
+/// Function to handle OCR processing
+const handleOcr = async () => {
+  if (!selectedFile) return;
+
+  if (completedCrop) {
+    processCroppedImage();
+  } else {
+    sendFileToOcr(selectedFile); // This will send the original file
+  }
+};
+
+const sendFileToOcr = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('apikey', 'K82946382288957'); // Replace with your actual OCR.space API key
+  formData.append('language', 'eng'); // You can change this according to your requirements
+
+  try {
+    const response = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+
+    if (data.ParsedResults && data.ParsedResults.length > 0) {
+      const parsedText = data.ParsedResults[0].ParsedText;
+      setOcrResult(parsedText);
+      await sendOcrResultToServer(parsedText, profile.email);
+    } else {
+      setOcrResult("No text recognized");
+    }
+  } catch (error) {
+    console.error('OCR processing failed:', error);
+    setOcrResult("OCR processing failed");
+  }
+};
+
 
   // Function to send the OCR result to the server
   async function sendOcrResultToServer(ocrText, userEmail) {
@@ -136,7 +210,7 @@ export default function Home() {
 const logoutUser = () => {
     signOut(firebaseAuth).then(() => {
         // Sign-out successful.
-        setProfile(null);
+        setProfile(nuonll);
     }).catch((error) => {
         console.error('Logout Failed:', error);
     });
@@ -175,6 +249,22 @@ return (
           <span>Upload Image</span>
           <input type="file" accept="image/*" onChange={handleFileChange} />
           {selectedFile && <div>Selected file: {selectedFile.name}</div>}
+          {imagePreviewUrl && (
+            <ReactCrop
+              crop={crop}
+              onChange={(_, percentCrop) => setCrop(percentCrop)}
+              onComplete={(c) => setCompletedCrop(c)}
+            >
+            <img
+              src={imagePreviewUrl}
+              ref={imgRef}
+              alt="Preview"
+              className="mt-2 w-32 h-32 object-cover" // Adjust the width and height as needed
+              
+            />
+              <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+          </ReactCrop>
+        )}
           {selectedFile && (
             <button className="mt-2" onClick={handleOcr}>
               Process OCR
