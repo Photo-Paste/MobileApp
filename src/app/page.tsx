@@ -42,6 +42,7 @@ export default function Home() {
   async function processCroppedImage() {
     const image = imgRef.current;
     const previewCanvas = previewCanvasRef.current;
+    
     if (!image || !previewCanvas || !completedCrop) {
       console.error("Crop canvas does not exist");
       return;
@@ -217,6 +218,8 @@ return (
               className="max-w-full h-auto object-cover"
             />
           </ReactCrop>
+          <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+
           {renderTextOverlays()}
         </div>
       )}
