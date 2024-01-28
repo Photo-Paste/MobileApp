@@ -41,6 +41,7 @@ export default function Home() {
   async function processCroppedImage() {
     const image = imgRef.current;
     const previewCanvas = previewCanvasRef.current;
+    
     if (!image || !previewCanvas || !completedCrop) {
       console.error("Crop canvas does not exist");
       return;
@@ -86,7 +87,7 @@ export default function Home() {
     if (completedCrop) {
       processCroppedImage();
     }
-    if (selectedFile && profile) {
+    else if (selectedFile && profile) {
       performOCR(selectedFile, profile.email, sendOcrResultToServer);
     }
   };
@@ -207,6 +208,8 @@ return (
               className="max-w-full h-auto object-cover"
             />
           </ReactCrop>
+          <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+
           {renderTextOverlays()}
         </div>
       )}
