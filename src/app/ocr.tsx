@@ -26,8 +26,7 @@ export const useOCR = () => {
         const base64data = reader.result.split(',')[1];
         const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY;
   
-        // Determine the feature type based on the OCR mode
-        const featureType = ocrMode === 'HANDWRITTEN' ? 'DOCUMENT_TEXT_DETECTION' : 'TEXT_DETECTION';
+        const featureType = ocrMode === 'HANDWRITTEN' ? 'TEXT_DETECTION' : 'DOCUMENT_TEXT_DETECTION';
 
         const requestPayload = {
           requests: [
@@ -38,7 +37,7 @@ export const useOCR = () => {
           ]
         };
 
-        console.log(requestPayload)
+        console.log(requestPayload);
   
         try {
           const response = await fetch(visionApiUrl, {
