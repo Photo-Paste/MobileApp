@@ -10,6 +10,7 @@ import { FcGoogle } from "react-icons/fc";
 import ReactCrop, { PixelCrop, type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import firebase from 'firebase/compat/app';
+import Tesseract from 'tesseract.js';
 
 
 const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=';;
@@ -83,46 +84,35 @@ export default function Home() {
       type: 'image/jpeg',
     });
   
-    sendFileToOcr(croppedFile);
+    performOCR(croppedFile);
   }
   
-
-/// Function to handle OCR processing
-const handleOcr = async () => {
-  if (!selectedFile) return;
-
-  if (completedCrop) {
-    processCroppedImage();
-  } else {
-    sendFileToOcr(selectedFile); // This will send the original file
-  }
-};
-
-const sendFileToOcr = async (file: any) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('apikey', 'K82946382288957'); // Replace with your actual OCR.space API key
-  formData.append('language', 'eng'); // You can change this according to your requirements
-
-  try {
-    const response = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await response.json();
-
-    if (data.ParsedResults && data.ParsedResults.length > 0) {
-      const parsedText = data.ParsedResults[0].ParsedText;
-      setOcrResult(parsedText);
-      await sendOcrResultToServer(parsedText, profile.email);
+  const handleOcr = async () => {
+    if (!selectedFile) return;
+  
+    if (completedCrop) {
+      processCroppedImage();
     } else {
-      setOcrResult("No text recognized");
+      performOCR(selectedFile); // This will send the original file
     }
-  } catch (error) {
-    console.error('OCR processing failed:', error);
-    setOcrResult("OCR processing failed");
-  }
-};
+  };
+  
+  const performOCR = (file: any) => {
+    Tesseract.recognize(
+      file,
+      'eng',
+      {
+        logger: m => console.log(m),
+      }
+    ).then(({ data: { text } }) => {
+      setOcrResult(text);
+      sendOcrResultToServer(text, profile.email);
+    })
+    .catch(error => {
+      console.error('OCR processing failed:', error);
+      setOcrResult("OCR processing failed");
+    });
+  };
 
 
   // Function to send the OCR result to the server
