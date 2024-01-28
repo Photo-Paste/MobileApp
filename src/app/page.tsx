@@ -83,6 +83,9 @@ export default function Home() {
   }
   
   const handleOcr = () => {
+    if (completedCrop) {
+      processCroppedImage();
+    }
     if (selectedFile && profile) {
       performOCR(selectedFile, profile.email, sendOcrResultToServer);
     }
