@@ -31,19 +31,10 @@ export default function Home() {
 
   const firebaseAuth = getAuth(app);
 
-  const handleSubmit = () => {
-    sendOcrResultToServer(ocrResult, userEmail);
-  };
-
-  const onImageLoaded = useCallback((image) => {
-    imgRef.current = image;
-  }, []);
-
-  const handleFileChange = (event) => {
+  const handleFileChange = (event: any) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
 
-      // Create a URL for the file
       const fileUrl = URL.createObjectURL(event.target.files[0]);
       setImagePreviewUrl(fileUrl);
     }
@@ -106,7 +97,7 @@ const handleOcr = async () => {
   }
 };
 
-const sendFileToOcr = async (file) => {
+const sendFileToOcr = async (file: any) => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('apikey', 'K82946382288957'); // Replace with your actual OCR.space API key
@@ -134,7 +125,7 @@ const sendFileToOcr = async (file) => {
 
 
   // Function to send the OCR result to the server
-  async function sendOcrResultToServer(ocrText, userEmail) {
+  async function sendOcrResultToServer(ocrText: any, userEmail: any) {
     const url = `http://68.183.156.19/records/${userEmail}`; // Replace with your actual API endpoint
     const payload = {
       text: ocrText,
@@ -206,15 +197,7 @@ const sendFileToOcr = async (file) => {
     }
   };
   
-// Firebase Logout
-const logoutUser = () => {
-    signOut(firebaseAuth).then(() => {
-        // Sign-out successful.
-        setProfile(nuonll);
-    }).catch((error) => {
-        console.error('Logout Failed:', error);
-    });
-};
+
 
 //useEffect to handle if user is already logged in
 useEffect(() => {
