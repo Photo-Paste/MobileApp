@@ -162,6 +162,9 @@ const renderTextOverlays = () => {
 
 return (
     <div>
+      <head>
+      <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"/>
+      </head>
       {profile ? (
         <>
   <div className="flex justify-between items-start p-4">
