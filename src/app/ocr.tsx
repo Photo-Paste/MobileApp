@@ -19,63 +19,52 @@ export const useOCR = () => {
   const [ocrData, setOcrData] = useState<OCRResult[]>([]);
 
 
-  const performOCR = async (file: any, email: any, sendOcrResultToServer: any) => {
+  const performOCR = async (file, email, sendOcrResultToServer) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
       if (typeof reader.result === 'string') {
         const base64data = reader.result.split(',')[1];
         const visionApiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' + YOUR_API_KEY;
-
+  
         const requestPayload = {
           requests: [
             {
-              image: {
-                content: base64data
-              },
-              features: [
-                {
-                  type: "TEXT_DETECTION"
-                }
-              ]
+              image: { content: base64data },
+              features: [{ type: "TEXT_DETECTION" }]
             }
           ]
         };
-
+  
         try {
           const response = await fetch(visionApiUrl, {
             method: 'POST',
             body: JSON.stringify(requestPayload),
-            headers: {
-              'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
           });
-
+  
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-
+  
           const data = await response.json();
-          console.log(data); // Log the response to inspect its structure
-
-          // Check if the necessary data is present
+  
           if (data.responses && data.responses[0] && data.responses[0].textAnnotations) {
-            const detections: Detection[] = data.responses[0].textAnnotations;
-            setOcrResult(detections[0]?.description);
-    
+            const detections = data.responses[0].textAnnotations;
+            const detectedText = detections[0]?.description;
+            setOcrResult(detectedText);
+      
             const ocrResultsWithBoxes = detections.slice(1).map(detection => ({
               text: detection.description,
               vertices: detection.boundingPoly?.vertices
             }));
             setOcrData(ocrResultsWithBoxes);
+  
+            // Call sendOcrResultToServer at the end with the detected text
+            sendOcrResultToServer(detectedText, email);
           } else {
             console.error('No text annotations found in the response');
             setOcrResult('No text detected');
-          }
-
-          if (data.responses && data.responses[0] && data.responses[0].fullTextAnnotation) {
-            const detectedText = data.responses[0].fullTextAnnotation.text;
-            sendOcrResultToServer(detectedText, email);
           }
         } catch (error) {
           console.error('OCR processing failed:', error);
@@ -83,7 +72,7 @@ export const useOCR = () => {
         }
       }
     };
-};
+  };
   return { ocrResult, ocrData, performOCR };
 };
 

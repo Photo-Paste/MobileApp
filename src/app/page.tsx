@@ -161,47 +161,58 @@ return (
     <div>
       {profile ? (
         <>
-          <div className="flex justify-between items-start p-4">
-            <div className="z-10">
-              <button onClick={logoutUser} className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition duration-150 ease-in-out">
-                Logout
-              </button>
-            </div>
-            <div className="z-10">
-              <img src={profile.picture} alt="user image" className="rounded-full h-12 w-12" />
-            </div>
-          </div>
+  <div className="flex justify-between items-start p-4">
+    <div className="z-10">
+      <button onClick={logoutUser} className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition duration-150 ease-in-out">
+        Logout
+      </button>
+    </div>
+    <div className="z-10">
+      <img src={profile.picture} alt="user image" className="rounded-full h-12 w-12" />
+    </div>
+  </div>
 
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col items-center mt-5">
-              <span className="text-lg font-medium mb-4">Upload Image</span>
-              <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
-              {selectedFile && <div>Selected file: {selectedFile.name}</div>}
-              {imagePreviewUrl && (
-                <div className="relative mt-2 w-full flex justify-center">
-                  <ReactCrop
-                    crop={crop}
-                    onChange={(_, percentCrop) => setCrop(percentCrop)}
-                    onComplete={(c) => setCompletedCrop(c)}
-                  >
-                    <img
-                      src={imagePreviewUrl}
-                      ref={imgRef}
-                      alt="Preview"
-                      className="max-w-full h-auto object-cover"
-                    />
-                  </ReactCrop>
-                  {renderTextOverlays()}
-                </div>
-              )}
-              {selectedFile && (
-                <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
-                  Process OCR
-                </button>
-              )}
-            </div>
-          </div>
-        </>
+  <div className="container mx-auto px-4">
+    <div className="flex flex-col items-center mt-5">
+      <span className="text-lg font-medium mb-4">Upload Image</span>
+      
+      <label htmlFor="file-upload" className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-150 ease-in-out mb-4">
+        <span>Select File</span>
+        <input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+      </label>
+
+      {selectedFile && (
+        <div className="bg-gray-100 rounded p-2 text-sm text-gray-700">
+          Selected file: <span className="font-semibold">{selectedFile.name}</span>
+        </div>
+      )}
+
+      {imagePreviewUrl && (
+        <div className="relative mt-2 w-full flex justify-center">
+          <ReactCrop
+            crop={crop}
+            onChange={(_, percentCrop) => setCrop(percentCrop)}
+            onComplete={(c) => setCompletedCrop(c)}
+          >
+            <img
+              src={imagePreviewUrl}
+              ref={imgRef}
+              alt="Preview"
+              className="max-w-full h-auto object-cover"
+            />
+          </ReactCrop>
+          {renderTextOverlays()}
+        </div>
+      )}
+
+      {selectedFile && (
+        <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition duration-150 ease-in-out" onClick={handleOcr}>
+          Process Image
+        </button>
+      )}
+    </div>
+  </div>
+</>
       ) : (
         <div className="text-center mt-10">
           <h1 className="text-4xl font-bold mb-5">PhotoPaste</h1>
